@@ -1,0 +1,108 @@
+---
+title: "431_Final_Project_Time_Series"
+output: html_document
+date: "2023-11-27"
+---
+
+## R Markdown
+
+# Read in data and make it into a time series object
+
+```{r}
+
+rm(list= ls()) # Clean up the environment by remove any existing variables
+
+data1.raw <- read.csv('Coffee_Time Series.csv', header=T)
+data1 <- ts(data1.raw[,2],start=c(1990,01),end=c(2022,06),frequency=12)
+summary(data1.raw)
+
+data2.raw <- data.frame(data1.raw$Month.Year, log(data1.raw$Value.of.Import))
+data2 <- ts(data2.raw[,2],start=c(1990,01),end=c(2022,06),frequency=12)
+summary(data2.raw)
+
+```
+
+# Visualizations of the data
+
+```{r}
+
+plot(data1)
+plot(data2)
+acf(data1)
+pacf(data1)
+
+# Using the log doesn't change the result of acf and pacf
+
+```
+
+# Run auto.arima to get a model
+
+```{r}
+library(forecast)
+model1 <- auto.arima(data1)
+model1
+
+model2 <- auto.arima(data2)
+model2
+
+```
+```{r}
+
+plot(decompose(data1, type = c("additive",
+"multiplicative")))
+plot(decompose(data2, type = c("additive",
+"multiplicative")))
+
+```
+
+# Some model diagnostics
+
+```{r}
+
+model1_stdres = model1$residuals/sd(model1$residuals)
+par(mfcol=c(2,2))
+plot(model1_stdres)
+acf(model1_stdres)
+pacf(model1_stdres)
+qqnorm(model1_stdres)
+checkresiduals(model1)
+
+model2_stdres = model2$residuals/sd(model2$residuals)
+par(mfcol=c(2,2))
+plot(model2_stdres)
+acf(model2_stdres)
+pacf(model2_stdres)
+qqnorm(model2_stdres)
+checkresiduals(model2)
+
+```
+
+# Forecasting
+
+```{r}
+
+library(ggplot2)
+autoplot(forecast(model1, h=60))
+
+autoplot(forecast(model2, h=60))
+
+```
+
+# Try exponential smoothing
+
+```{r}
+
+smoothing1 <- ses(data1, h=250,alpha=0.3, initial="simple")
+plot(smoothing1)
+
+holt1 <- holt(data1, h=250, initial="simple")
+plot(holt1)
+
+smoothing2 <- ses(data2, h=250,alpha=0.3, initial="simple")
+plot(smoothing2)
+
+holt2 <- holt(data2, h=250, initial="simple")
+plot(holt2)
+
+
+```
